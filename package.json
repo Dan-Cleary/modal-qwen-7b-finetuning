@@ -1,0 +1,30 @@
+{
+  "name": "modal-vertical-ai-demo",
+  "version": "1.0.0",
+  "description": "Full vertical AI infrastructure pipeline - model loading, RL rollouts, fine-tuning, and inference - all on Modal",
+  "type": "module",
+  "scripts": {
+    "load": "tsx src/01_load.ts",
+    "rollouts": "tsx src/02_rl_rollouts.ts",
+    "finetune": "tsx src/03_finetune.ts",
+    "serve": "tsx src/04_serve.ts"
+  },
+  "keywords": [
+    "modal",
+    "ai",
+    "machine-learning",
+    "rl",
+    "fine-tuning",
+    "qwen"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "modal": "^0.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

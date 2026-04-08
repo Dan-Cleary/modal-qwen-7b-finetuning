@@ -1,0 +1,13 @@
+# Modal CLI and Python dependencies
+# Install with: pip install -r requirements.txt
+
+modal>=0.64.0
+transformers==4.46.0
+torch==2.5.1
+accelerate==1.1.0
+peft==0.13.0
+datasets==3.0.0
+huggingface_hub==0.26.0
+bitsandbytes==0.44.0
+fastapi==0.115.0
+pydantic==2.9.0
