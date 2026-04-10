@@ -54,23 +54,22 @@ async function finetune() {
   const modal = new ModalClient();
 
   try {
-    // Look up the fine-tuning app
-    console.log("📦 Looking up Modal app: vertical-ai-finetune");
-    const app = await modal.apps.fromName("vertical-ai-finetune");
-
     // Get the fine-tuning function
     console.log("🔍 Finding finetune_model function...\n");
-    const finetuneFn = await modal.functions.lookup(app.appId, "finetune_model");
+    const finetuneFn = await modal.functions.fromName(
+      "vertical-ai-finetune",
+      "finetune_model"
+    );
 
     console.log("🚀 Starting fine-tuning on Modal A100 GPU...");
-    console.log("⏱️  This will take ~15-30 minutes depending on configuration");
+    console.log("⏱️  This will take ~20-40 minutes with enhanced training");
     console.log("💡 Modal automatically provisions the GPU and scales down when done\n");
 
     console.log("Training configuration:");
     console.log("  • GPU: A100 (40GB)");
     console.log("  • Method: LoRA (parameter-efficient fine-tuning)");
     console.log("  • Trainable params: ~1% of total (much faster!)");
-    console.log("  • Epochs: 3");
+    console.log("  • Epochs: 10 (increased for better results)");
     console.log("  • Learning rate: 2e-5");
     console.log("  • Batch size: 4 (with gradient accumulation)\n");
 
@@ -78,12 +77,8 @@ async function finetune() {
 
     // Invoke the fine-tuning function
     // This runs remotely on Modal's infrastructure with an A100 GPU
-    const result = await finetuneFn.callRemote(
-      datasetContent,  // dataset_jsonl
-      rolloutContent,  // rollout_results_jsonl (optional)
-      "qwen-2.5-7b-instruct-finetuned",  // output_name
-      3,  // num_epochs
-      2e-5  // learning_rate
+    const result = await finetuneFn.remote(
+      [datasetContent, rolloutContent, "qwen-2.5-7b-instruct-finetuned", 10, 2e-5]
     );
 
     const duration = (Date.now() - startTime) / 1000;
@@ -110,7 +105,7 @@ async function finetune() {
     console.log("💡 Modal automatically:");
     console.log("   • Provisioned an A100 GPU");
     console.log("   • Loaded the 14GB model");
-    console.log("   • Ran training for 3 epochs");
+    console.log("   • Ran training for 10 epochs");
     console.log("   • Saved results to persistent storage");
     console.log("   • Released resources when done");
     console.log("   • You only pay for actual GPU time used!\n");

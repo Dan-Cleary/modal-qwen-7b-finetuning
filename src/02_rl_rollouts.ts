@@ -1,29 +1,26 @@
 /**
- * Step 2: RL Rollouts with Modal Sandboxes
+ * Step 2: RL Rollouts with Modal Functions
  *
- * This demonstrates the CORE differentiator of Modal: massively parallel sandboxed execution.
- * We spin up multiple isolated environments where the model attempts customer service queries
- * and gets scored based on response quality.
+ * This demonstrates Modal's ability to run massively parallel workloads.
+ * We run multiple inference calls in parallel, score the responses, and save
+ * results for fine-tuning.
  *
- * Modal Sandboxes explained:
- * - Isolated execution environments (secure containers)
- * - Can scale to 100,000+ concurrent sandboxes
- * - Perfect for RL rollouts, AI agent execution, code evaluation
- * - Each sandbox has its own filesystem, process space, network
- * - This is what companies like Cursor use for their AI infrastructure
+ * NOTE: In production, you'd use Modal Sandboxes for fully isolated execution
+ * environments (perfect for untrusted code, AI agents, etc). For this demo,
+ * we're using parallel Function calls which is simpler with the TypeScript SDK.
+ *
+ * Modal's scalability:
+ * - Functions auto-scale based on load
+ * - Can handle thousands of concurrent requests
+ * - Each invocation is isolated
+ * - GPU functions spin up/down automatically
  *
  * What this script does:
  * 1. Loads our customer service dataset
  * 2. Samples queries to test the model against
- * 3. Spins up parallel sandboxes (10 concurrent by default, but Modal scales to 100k+)
- * 4. Each sandbox runs the model against a query and evaluates the response
- * 5. Collects results and scores for fine-tuning
- *
- * This is a simplified RL setup - production systems would have:
- * - More sophisticated reward models
- * - PPO/RLHF training loops
- * - Human feedback integration
- * But this shows the infrastructure that makes it possible.
+ * 3. Runs parallel inference calls (10 concurrent by default)
+ * 4. Scores each response based on quality
+ * 5. Saves results for fine-tuning
  */
 
 import { ModalClient } from "modal";
@@ -40,12 +37,11 @@ interface RolloutResult {
   modelResponse: string;
   expectedAnswer: string;
   score: number;
-  sandboxId: string;
   executionTime: number;
 }
 
 async function runRLRollouts() {
-  console.log("🎯 Starting RL Rollouts with Modal Sandboxes\n");
+  console.log("🎯 Starting RL Rollouts with Modal Functions\n");
 
   // Load the dataset
   console.log("📚 Loading customer service dataset...");
@@ -58,148 +54,85 @@ async function runRLRollouts() {
 
   console.log(`✅ Loaded ${dataset.length} Q&A pairs\n`);
 
-  // Sample queries for rollouts (using first 10 for demo, but Modal can handle 100k+)
+  // Sample queries for rollouts
   const numRollouts = 10;
   const sampledQueries = dataset.slice(0, numRollouts);
   console.log(`🎲 Running ${numRollouts} parallel rollouts...`);
-  console.log(`💡 Modal can scale to 100,000+ concurrent sandboxes!\n`);
+  console.log(`💡 Modal auto-scales to handle the load!\n`);
 
   // Initialize Modal client
   const modal = new ModalClient();
 
   try {
-    // Create/get the app
-    console.log("📦 Setting up Modal app...");
-    const app = await modal.apps.fromName("vertical-ai-rl-rollouts", {
-      createIfMissing: true,
-    });
-
-    // Get the model volume (created in step 1)
-    console.log("📂 Mounting model volume...");
-    const modelVolume = await modal.volumes.fromName("qwen-model-cache");
-
-    // Create a Python image with ML dependencies
-    // Even though we're in TypeScript, the sandbox needs Python to run the model
-    const image = modal.images.fromRegistry("python:3.11-slim").run(
-      "pip",
-      "install",
-      "transformers==4.46.0",
-      "torch==2.5.1",
-      "accelerate==1.1.0"
+    // Get the test_inference function from our deployed app
+    console.log("🔍 Looking up inference function...");
+    const inferenceFn = await modal.functions.fromName(
+      "vertical-ai-load-model",
+      "test_inference"
     );
 
-    console.log("🚀 Launching sandboxes in parallel...\n");
+    console.log("🚀 Launching parallel inference calls...\n");
 
     const startTime = Date.now();
 
-    // Launch all sandboxes in parallel
-    // This is the power of Modal - each sandbox is isolated and can run concurrently
+    // Run all inferences in parallel
     const rolloutPromises = sampledQueries.map(async (query, idx) => {
-      const sandboxStart = Date.now();
+      const rolloutStart = Date.now();
 
-      // Create a sandbox for this rollout
-      const sandbox = await modal.sandboxes.create(app, image, {
-        volumes: { "/models": modelVolume.readOnly() }, // Mount model as read-only
-        timeout: 300, // 5 minute timeout
-        cpu: 2,
-        memory: 8192, // 8GB RAM
-      });
-
-      console.log(
-        `[Sandbox ${idx + 1}/${numRollouts}] Created: ${sandbox.sandboxId}`
-      );
+      console.log(`[Rollout ${idx + 1}/${numRollouts}] Running: "${query.question}"`);
 
       try {
-        // Create a Python script to run inference
-        // In a real system, you'd have a more sophisticated evaluation setup
-        const inferenceScript = `
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+        // Call the inference function
+        const result = await inferenceFn.remote([query.question]);
+        const modelResponse = result.response;
 
-cache_dir = "/models/qwen-2.5-7b-instruct"
-question = "${query.question.replace(/"/g, '\\"')}"
-
-# Load model
-tokenizer = AutoTokenizer.from_pretrained(cache_dir)
-model = AutoModelForCausalLM.from_pretrained(
-    cache_dir,
-    device_map="cpu",  # Using CPU for demo, production would use GPU
-    torch_dtype=torch.float32,
-)
-
-# Run inference
-messages = [{"role": "user", "content": question}]
-text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-inputs = tokenizer([text], return_tensors="pt")
-
-outputs = model.generate(
-    **inputs,
-    max_new_tokens=100,
-    temperature=0.7,
-    top_p=0.9,
-    do_sample=True,
-)
-
-response = tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
-print(response.strip())
-`;
-
-        // Write the script to the sandbox
-        await sandbox.exec(["mkdir", "-p", "/tmp"]);
-        await sandbox.exec([
-          "sh",
-          "-c",
-          `cat > /tmp/infer.py << 'EOF'\n${inferenceScript}\nEOF`,
-        ]);
-
-        // Run inference
-        console.log(`[Sandbox ${idx + 1}] Running inference...`);
-        const inferProc = await sandbox.exec(["python", "/tmp/infer.py"]);
-        const modelResponse = (await inferProc.stdout.readText()).trim();
-        await inferProc.wait();
-
-        // Simple scoring: check if key terms from expected answer appear in model response
-        // Production systems would use more sophisticated reward models
+        // Score the response
         const score = calculateScore(modelResponse, query.answer);
 
-        const executionTime = Date.now() - sandboxStart;
+        const executionTime = Date.now() - rolloutStart;
 
         console.log(
-          `[Sandbox ${idx + 1}] ✅ Complete (${(executionTime / 1000).toFixed(1)}s, score: ${score.toFixed(2)})`
+          `[Rollout ${idx + 1}] ✅ Complete (${(executionTime / 1000).toFixed(1)}s, score: ${score.toFixed(2)})`
         );
-
-        // Clean up
-        await sandbox.terminate();
 
         return {
           question: query.question,
           modelResponse,
           expectedAnswer: query.answer,
           score,
-          sandboxId: sandbox.sandboxId,
           executionTime,
         } as RolloutResult;
       } catch (error) {
-        console.error(`[Sandbox ${idx + 1}] ❌ Error:`, error);
-        await sandbox.terminate();
-        throw error;
+        console.error(`[Rollout ${idx + 1}] ❌ Error: ${(error as Error).message}`);
+        // Return null for failed rollouts, we'll filter them out
+        return null;
       }
     });
 
-    // Wait for all rollouts to complete
-    const results = await Promise.all(rolloutPromises);
+    // Wait for all rollouts to complete, filter out failures
+    const allResults = await Promise.all(rolloutPromises);
+    const results = allResults.filter((r): r is RolloutResult => r !== null);
 
     const totalTime = Date.now() - startTime;
 
-    console.log(`\n✨ All rollouts complete in ${(totalTime / 1000).toFixed(1)}s!`);
-    console.log(`⚡ Average time per rollout: ${(totalTime / numRollouts / 1000).toFixed(1)}s`);
+    console.log(`\n✨ Rollouts complete in ${(totalTime / 1000).toFixed(1)}s!`);
+    console.log(`   Successful: ${results.length}/${numRollouts}`);
+    if (results.length < numRollouts) {
+      console.log(`   ⚠️  ${numRollouts - results.length} rollout(s) timed out or failed`);
+    }
+    console.log(`⚡ Average time per successful rollout: ${(totalTime / results.length / 1000).toFixed(1)}s`);
 
     // Calculate aggregate stats
+    if (results.length === 0) {
+      console.error("\n❌ No successful rollouts! Cannot continue.");
+      throw new Error("All rollouts failed");
+    }
+
     const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
     console.log(`\n📊 Aggregate Statistics:`);
     console.log(`   Average score: ${avgScore.toFixed(2)}`);
-    console.log(`   Total rollouts: ${results.length}`);
-    console.log(`   Successful: ${results.filter((r) => r.score > 0.5).length}`);
+    console.log(`   Total successful rollouts: ${results.length}`);
+    console.log(`   High-scoring (>0.3): ${results.filter((r) => r.score > 0.3).length}`);
 
     // Save results for fine-tuning
     const outputPath = join(process.cwd(), "data", "rollout_results.jsonl");
@@ -218,6 +151,12 @@ print(response.strip())
       });
 
     console.log("\n✅ RL rollouts complete! Ready for fine-tuning.");
+    console.log("\n💡 In production, you'd use Modal Sandboxes for:");
+    console.log("   • Fully isolated execution environments");
+    console.log("   • Running untrusted code safely");
+    console.log("   • AI agent evaluation at 100k+ concurrency");
+    console.log("   • This demo uses Functions for simplicity with TS SDK");
+
   } catch (error) {
     console.error("\n❌ Error during rollouts:", error);
     throw error;

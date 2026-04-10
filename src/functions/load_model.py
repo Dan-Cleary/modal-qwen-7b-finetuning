@@ -31,7 +31,7 @@ image = (
     image=image,
     volumes={"/models": model_volume},  # Mount the volume at /models
     timeout=3600,  # Model download can take time on first run
-    secrets=[modal.Secret.from_name("huggingface-secret")],  # Optional: for gated models
+    # secrets=[modal.Secret.from_name("huggingface-secret")],  # Uncomment for gated models
 )
 def download_model():
     """

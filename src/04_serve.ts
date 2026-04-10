@@ -9,7 +9,6 @@
  * - Fast model loading from Volumes
  * - GPU-accelerated inference
  * - Easy A/B testing between model versions
- * - The "keep_warm" feature to reduce cold starts
  *
  * The before/after comparison shows the value of the entire pipeline:
  * Load → RL Rollouts → Fine-tune → Serve
@@ -25,8 +24,6 @@ const TEST_QUERIES = [
   "How do I reset my password?",
   "Can I upgrade my plan mid-cycle?",
   "What's your refund policy?",
-  "How do I enable two-factor authentication?",
-  "Do you offer student discounts?",
 ];
 
 async function serveAndCompare() {
@@ -40,17 +37,20 @@ async function serveAndCompare() {
   const modal = new ModalClient();
 
   try {
-    // Look up the serving app
-    console.log("📦 Looking up Modal app: vertical-ai-serve");
-    const app = await modal.apps.fromName("vertical-ai-serve");
+    // Get both inference functions
+    console.log("🔍 Finding inference functions...\n");
+    const baseModelFn = await modal.functions.fromName(
+      "vertical-ai-serve",
+      "generate_base"
+    );
+    const finetunedModelFn = await modal.functions.fromName(
+      "vertical-ai-serve",
+      "generate_finetuned"
+    );
 
-    // Get the comparison function
-    console.log("🔍 Finding compare_models function...\n");
-    const compareFn = await modal.functions.lookup(app.appId, "compare_models");
-
-    console.log("=" .repeat(80));
+    console.log("=".repeat(80));
     console.log("🔬 BEFORE/AFTER COMPARISON");
-    console.log("=" .repeat(80));
+    console.log("=".repeat(80));
 
     // Run comparisons for each test query
     for (let i = 0; i < TEST_QUERIES.length; i++) {
@@ -58,19 +58,30 @@ async function serveAndCompare() {
 
       console.log(`\n[${i + 1}/${TEST_QUERIES.length}] Query: "${query}"\n`);
 
-      // Call Modal function to compare both models
-      const result = await compareFn.callRemote(query, 150);
+      try {
+        // Call base model
+        console.log("📊 Running base model...");
+        const baseResult = await baseModelFn.remote([query, 150]);
 
-      console.log("📊 BASE MODEL (Generic Qwen 2.5 7B):");
-      console.log(`   ${result.base_model.response}\n`);
+        // Call fine-tuned model
+        console.log("✨ Running fine-tuned model...");
+        const finetunedResult = await finetunedModelFn.remote([query, 150]);
 
-      console.log("✨ FINE-TUNED MODEL (Specialized for Customer Service):");
-      console.log(`   ${result.finetuned_model.response}\n`);
+        console.log("\n📊 BASE MODEL (Generic Qwen 2.5 7B):");
+        console.log(`   ${baseResult}\n`);
 
-      console.log("-".repeat(80));
+        console.log("✨ FINE-TUNED MODEL (Specialized for Customer Service):");
+        console.log(`   ${finetunedResult}\n`);
+
+        console.log("-".repeat(80));
+      } catch (error) {
+        console.error(`\n❌ Error on query ${i + 1}:`, (error as Error).message);
+        console.log("Continuing with next query...\n");
+        continue;
+      }
 
       // Small delay between comparisons for readability
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     console.log("\n✅ Comparison complete!\n");
@@ -83,29 +94,22 @@ async function serveAndCompare() {
 
     console.log("💡 The vertical AI loop:");
     console.log("   ✓ Step 1: Loaded Qwen 2.5 7B to Modal Volume");
-    console.log("   ✓ Step 2: Ran RL rollouts in Modal Sandboxes (massively parallel)");
+    console.log("   ✓ Step 2: Ran RL rollouts with parallel inference");
     console.log("   ✓ Step 3: Fine-tuned on A100 GPU with customer service data");
     console.log("   ✓ Step 4: Served both models for comparison on T4 GPU\n");
 
     console.log("🚀 All three Modal primitives in action:");
-    console.log("   • VOLUMES: Persistent model storage");
-    console.log("   • SANDBOXES: Isolated RL rollout environments (scale to 100k+)");
-    console.log("   • FUNCTIONS: GPU-powered ML operations (load, train, serve)\n");
+    console.log("   • VOLUMES: Persistent model storage (~14GB)");
+    console.log("   • FUNCTIONS: GPU-powered ML operations (auto-scaling)");
+    console.log("   • Full pipeline running on one platform with one SDK\n");
 
-    console.log("✨ This entire infrastructure loop runs on one platform,");
-    console.log("   with one SDK, and you only pay for actual compute time used.\n");
+    console.log("✨ This entire infrastructure loop runs on Modal,");
+    console.log("   and you only pay for actual compute time used.\n");
 
-    // Show the web endpoint info
     console.log("🌐 Production Deployment:");
-    console.log("   Your fine-tuned model is now served via Modal Functions!");
-    console.log("   It has a web endpoint ready for production use.");
-    console.log("   Modal handles scaling, GPUs, and infrastructure automatically.\n");
-
-    console.log("📚 Next steps:");
-    console.log("   • Deploy to production: modal deploy src/functions/serve.py");
-    console.log("   • Get web URL: modal app show vertical-ai-serve");
-    console.log("   • Call the API from your application");
-    console.log("   • Iterate: collect feedback → more rollouts → fine-tune again\n");
+    console.log("   Your fine-tuned model is deployed at:");
+    console.log("   https://dancleary54--vertical-ai-serve-inference-endpoint.modal.run");
+    console.log("   It's ready for production use with auto-scaling!\n");
 
   } catch (error) {
     console.error("\n❌ Error during comparison:", error);

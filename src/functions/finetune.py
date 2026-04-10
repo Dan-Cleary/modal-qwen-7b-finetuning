@@ -27,7 +27,7 @@ image = (
         "peft==0.13.0",  # For LoRA fine-tuning
         "datasets==3.0.0",
         "huggingface_hub==0.26.0",
-        "bitsandbytes==0.44.0",  # For efficient quantization
+        "bitsandbytes==0.49.2",  # For efficient quantization
     )
 )
 
@@ -37,7 +37,7 @@ image = (
     gpu="A100",  # Using A100 for fast fine-tuning (A10G or T4 also work, just slower)
     volumes={"/models": model_volume},
     timeout=7200,  # 2 hours for fine-tuning
-    secrets=[modal.Secret.from_name("huggingface-secret")],
+    # secrets=[modal.Secret.from_name("huggingface-secret")],  # Uncomment for gated models
 )
 def finetune_model(
     dataset_jsonl: str,

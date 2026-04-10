@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Vertical AI Demo - The Modal Times</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .sharp-corners {
+            border-radius: 0px !important;
+        }
+
+        body {
+            font-family: 'Lora', Georgia, serif;
+            background: #F9F9F7;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23111111' fill-opacity='0.04' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #111111;
+            line-height: 1.625;
+        }
+
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-body { font-family: 'Lora', serif; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 32px 0;
+            border-top: 4px solid #111111;
+            border-bottom: 4px solid #111111;
+        }
+
+        .masthead {
+            font-family: 'Playfair Display', serif;
+            font-size: 5rem;
+            font-weight: 900;
+            color: #111111;
+            letter-spacing: -0.03em;
+            line-height: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .edition-info {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #525252;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-family: 'Lora', serif;
+            font-size: 1.25rem;
+            color: #404040;
+            margin-top: 16px;
+            font-style: italic;
+        }
+
+        .main-section {
+            border: 1px solid #111111;
+            background: #F9F9F7;
+            padding: 48px;
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            border-bottom: 2px solid #111111;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #111111;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+        }
+
+        .section-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #737373;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .question {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 16px;
+            padding: 24px;
+            border: 1px solid #111111;
+            border-left: 4px solid #CC0000;
+        }
+
+        .context-note {
+            font-family: 'Lora', serif;
+            color: #525252;
+            font-size: 1rem;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #E5E5E0;
+            border-left: 2px solid #111111;
+            line-height: 1.7;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1px 1fr;
+            gap: 0;
+            margin-top: 32px;
+            border: 1px solid #111111;
+        }
+
+        .divider {
+            background: #111111;
+            width: 1px;
+        }
+
+        .model-card {
+            padding: 32px;
+            position: relative;
+            transition: all 0.2s ease-out;
+        }
+
+        .model-card:hover {
+            background: #F5F5F5;
+        }
+
+        .model-card.base {
+            border-bottom: 2px solid #CC0000;
+        }
+
+        .model-card.training {
+            border-bottom: 2px solid #111111;
+        }
+
+        .model-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #737373;
+            margin-bottom: 8px;
+        }
+
+        .model-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #111111;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .model-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border: 1px solid #111111;
+            background: transparent;
+        }
+
+        .model-card.base .model-tag {
+            border-color: #CC0000;
+            color: #CC0000;
+        }
+
+        .response {
+            font-family: 'Lora', serif;
+            color: #111111;
+            line-height: 1.8;
+            font-size: 1rem;
+            margin-top: 20px;
+            text-align: justify;
+        }
+
+        .highlight {
+            background: #FFEB3B;
+            padding: 2px 6px;
+            font-weight: 600;
+            color: #111111;
+        }
+
+        .training-note {
+            margin-top: 24px;
+            padding: 16px;
+            border: 1px solid #111111;
+            background: #F5F5F5;
+        }
+
+        .training-note-title {
+            font-family: 'Inter', sans-serif;
+            color: #111111;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .training-note-text {
+            font-family: 'Lora', serif;
+            color: #525252;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .training-data-section {
+            margin-top: 40px;
+            border: 1px solid #111111;
+        }
+
+        .training-data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 20px;
+            background: #111111;
+            color: #F9F9F7;
+            transition: background 0.2s;
+        }
+
+        .training-data-header:hover {
+            background: #000000;
+        }
+
+        .training-data-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .expand-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        .training-examples {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+
+        .training-examples.expanded {
+            max-height: 2000px;
+        }
+
+        .example-item {
+            padding: 20px;
+            border-bottom: 1px solid #E5E5E0;
+            background: #F9F9F7;
+        }
+
+        .example-item:last-child {
+            border-bottom: none;
+        }
+
+        .example-q {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            color: #111111;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .example-a {
+            font-family: 'Lora', serif;
+            color: #525252;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .insight {
+            border: 2px solid #111111;
+            padding: 32px;
+            margin-top: 40px;
+            background: #F9F9F7;
+        }
+
+        .insight-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 20px;
+            font-size: 1.75rem;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+        }
+
+        .insight-text {
+            font-family: 'Lora', serif;
+            color: #111111;
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
+        .insight-text strong {
+            font-weight: 700;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            margin-top: 32px;
+            border: 1px solid #111111;
+        }
+
+        .stat-card {
+            padding: 32px 24px;
+            text-align: center;
+            border-right: 1px solid #111111;
+            transition: all 0.2s ease-out;
+        }
+
+        .stat-card:last-child {
+            border-right: none;
+        }
+
+        .stat-card:hover {
+            background: #111111;
+            color: #F9F9F7;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: inherit;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-family: 'Inter', sans-serif;
+            color: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .pipeline-section {
+            border: 1px solid #111111;
+            padding: 48px;
+            margin-top: 32px;
+        }
+
+        .pipeline-steps {
+            margin-top: 32px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+            border: 1px solid #111111;
+        }
+
+        .step {
+            padding: 28px;
+            border-right: 1px solid #111111;
+            border-bottom: 1px solid #111111;
+            transition: all 0.2s ease-out;
+        }
+
+        .step:nth-child(2n) {
+            border-right: none;
+        }
+
+        .step:nth-child(n+3) {
+            border-bottom: none;
+        }
+
+        .step:hover {
+            background: #F5F5F5;
+            box-shadow: 4px 4px 0px 0px #111111;
+            transform: translate(-2px, -2px);
+        }
+
+        .step-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #CC0000;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 8px;
+        }
+
+        .step-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 8px;
+            font-size: 1.15rem;
+        }
+
+        .step-desc {
+            font-family: 'Lora', serif;
+            color: #525252;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 80px;
+            padding-top: 32px;
+            border-top: 2px solid #111111;
+        }
+
+        .footer-content {
+            font-family: 'JetBrains Mono', monospace;
+            color: #737373;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+        }
+
+        .footer a {
+            color: #111111;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: #CC0000;
+        }
+
+        @media (max-width: 1024px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .divider {
+                display: none;
+            }
+
+            .model-card {
+                border-bottom: 1px solid #111111;
+            }
+
+            .model-card:last-child {
+                border-bottom: none;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-card:nth-child(2) {
+                border-right: none;
+            }
+
+            .stat-card:nth-child(3) {
+                border-right: 1px solid #111111;
+            }
+
+            .pipeline-steps {
+                grid-template-columns: 1fr;
+            }
+
+            .step {
+                border-right: none !important;
+                border-bottom: 1px solid #111111 !important;
+            }
+
+            .step:last-child {
+                border-bottom: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .masthead {
+                font-size: 3rem;
+            }
+
+            .main-section {
+                padding: 32px 20px;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .question {
+                font-size: 1.5rem;
+                padding: 20px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                border-right: none !important;
+                border-bottom: 1px solid #111111;
+            }
+
+            .stat-card:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="masthead">Fine-Tuning Demo</h1>
+            <div class="subtitle">Building a specialized customer service model with Modal infrastructure</div>
+            <div class="edition-info" style="margin-top: 16px;">
+                <a href="https://github.com/Dan-Cleary/modal-qwen-7b-finetuning" target="_blank" style="color: #111111; text-decoration: underline; text-decoration-thickness: 2px; font-weight: 600;">View on GitHub →</a>
+            </div>
+        </header>
+
+        <div class="main-section">
+            <div class="section-header">
+                <h2 class="section-title">Model Comparison</h2>
+            </div>
+
+            <div class="question">Can I upgrade my plan mid-cycle?</div>
+
+            <div class="context-note">
+                We started with <strong><a href="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct" target="_blank" style="color: #111111; text-decoration: underline;">Qwen 2.5 7B Instruct</a></strong> (left), a generic foundation model. Then we fine-tuned it on 206 customer service Q&A pairs for 10 epochs on an A100 GPU. The result (right) shows how the model learned to give direct, product-specific answers instead of generic advice. <em>Yellow highlights show key differences in the responses.</em>
+            </div>
+
+            <div class="comparison">
+                <div class="model-card base">
+                    <div class="model-name">Base Model</div>
+                    <div class="model-title">Qwen 2.5 7B Instruct</div>
+                    <span class="model-tag">Out-of-Box</span>
+                    <div class="response">
+                        Whether you can upgrade your plan mid-cycle often depends on the specific service provider or platform you're using. Many providers offer the flexibility to upgrade your plan at any time, but there might be certain conditions or restrictions. Here are some general steps and considerations:
+                        <br><br>
+                        1. <strong>Check Your Provider's Policy:</strong> Review the terms and conditions of your current plan or contact customer support to understand their policy on mid-cycle upgrades.
+                        <br><br>
+                        2. <strong>Availability of New Plan:</strong> Ensure that the new plan you want to upgrade to is available during your current billing cycle.
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="model-card training">
+                    <div class="model-name">Fine-Tuned Model</div>
+                    <div class="model-title">Qwen 2.5 7B Instruct</div>
+                    <span class="model-tag">Specialized</span>
+                    <div class="response">
+                        <span class="highlight">Yes</span>, you can upgrade at any time. Billing starts immediately and <span class="highlight">prorates based on the remaining days</span>. Downgrades also work this way. <span class="highlight">No surprises or hidden fees</span>.
+                    </div>
+                    <div class="training-note">
+                        <div class="training-note-title">Training Results</div>
+                        <div class="training-note-text">
+                            Trained on <strong>206 Q&A pairs</strong> for 10 epochs. Final loss: 2.78. Direct, product-aware responses.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="training-data-section">
+                <div class="training-data-header" onclick="toggleExamples()">
+                    <div class="training-data-title">View Training Dataset (206 Examples)</div>
+                    <span class="expand-icon" id="expandIcon">▼</span>
+                </div>
+                <div class="training-examples" id="trainingExamples">
+                    <div class="example-item">
+                        <div class="example-q">Q: How do I reset my password?</div>
+                        <div class="example-a">A: To reset your password, click 'Forgot Password' on the login page, enter your email address, and follow the instructions in the reset email we'll send you. The link expires in 24 hours.</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-q">Q: What payment methods do you accept?</div>
+                        <div class="example-a">A: We accept all major credit cards (Visa, Mastercard, American Express, Discover) and PayPal. Enterprise customers can also pay via invoice with NET30 terms.</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-q">Q: How do I cancel my subscription?</div>
+                        <div class="example-a">A: Go to Settings > Billing and click 'Cancel Subscription'. You'll retain access until the end of your current billing period. We don't offer prorated refunds for unused time.</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-q">Q: Do you offer a free trial?</div>
+                        <div class="example-a">A: Yes, we offer a 14-day free trial with full access to all Pro features. No credit card required to start. You can upgrade anytime during or after the trial.</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-q">Q: Is my data encrypted?</div>
+                        <div class="example-a">A: Yes, all data is encrypted in transit using TLS 1.3 and at rest using AES-256 encryption. We follow SOC 2 Type II compliance standards.</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-q">+ 201 additional examples</div>
+                        <div class="example-a">Complete dataset covers billing, integrations, security, workflows, and enterprise features.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight">
+                <div class="insight-title">Cost Breakdown</div>
+                <div class="insight-text">
+                    <strong>Fine-tuning:</strong> $0.52 (9.3 minutes on A100 GPU, 40GB memory)
+                    <br>
+                    <strong>Model loading:</strong> $1.16 (downloading 14GB model weights to Modal Volume)
+                    <br>
+                    <strong>Total pipeline cost:</strong> ~$1.68 for one complete run
+                    <br><br>
+                    <strong>Pricing model:</strong> You pay for GPU time, not tokens. Modal charges per second of GPU usage (~$0.018/minute on A10G) regardless of token count. Each call takes 60-90 seconds: 30-60s to load the model into GPU memory, then 10-30s to generate the response.
+                    <br><br>
+                    <strong>About the model:</strong> <a href="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct" target="_blank" style="color: #111111; text-decoration: underline;">Qwen 2.5 7B Instruct</a> is a 7-billion parameter foundation model by Alibaba. We used LoRA (Low-Rank Adaptation) fine-tuning, which trains only ~1% of the model's parameters (10M out of 7B), making it much faster and cheaper than full fine-tuning. Training loss improved from baseline to 2.78.
+                    <br><br>
+                    Modal handles GPU provisioning, persistent model storage (Volumes), and auto-scaling inference. You pay only for actual compute time used.
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">$0.52</div>
+                <div class="stat-label">Fine-tuning</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$1.16</div>
+                <div class="stat-label">Model Load</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2.78</div>
+                <div class="stat-label">Final Loss</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">206</div>
+                <div class="stat-label">Examples</div>
+            </div>
+        </div>
+
+        <div class="main-section" style="margin-top: 32px;">
+            <div class="section-header">
+                <h2 class="section-title">Modal Infrastructure</h2>
+            </div>
+
+            <div class="training-data-section" style="margin-top: 0;">
+                <div class="training-data-header" onclick="toggleModal()">
+                    <div class="training-data-title">What We Used from Modal</div>
+                    <span class="expand-icon" id="expandModalIcon">▼</span>
+                </div>
+                <div class="training-examples" id="modalFeatures">
+                    <div class="example-item" style="border-bottom: 1px solid #E5E5E0;">
+                        <div class="example-q">1. Modal Volumes</div>
+                        <div class="example-a">Persistent distributed storage for the 14GB model weights. Download once, cache it, reuse it across every pipeline step. First load: 10 minutes. Subsequent runs: instant. Shared across all Functions.</div>
+                    </div>
+                    <div class="example-item" style="border-bottom: 1px solid #E5E5E0;">
+                        <div class="example-q">2. Modal Functions</div>
+                        <div class="example-a">Serverless GPU functions for all compute. A100 (40GB) for fine-tuning, A10G for inference serving. Call them from TypeScript, they run on Modal's infrastructure. Automatic GPU provisioning and release.</div>
+                    </div>
+                    <div class="example-item" style="border-bottom: 1px solid #E5E5E0;">
+                        <div class="example-q">3. TypeScript SDK</div>
+                        <div class="example-a">Orchestrated the entire pipeline from TypeScript. Python functions for GPU work, TypeScript for coordination. Single SDK for the full workflow. Type-safe function calls across languages.</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-q">4. Auto-scaling</div>
+                        <div class="example-a">The entire pipeline auto-scales. Need 10 parallel GPU instances? Modal spins them up. Done with training? GPU releases automatically. Scale to zero when idle. Pay only for actual compute time used.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pipeline-section">
+            <div class="section-header">
+                <h2 class="section-title">The Pipeline</h2>
+            </div>
+
+            <div class="pipeline-steps">
+                <div class="step">
+                    <div class="step-number">Step 01</div>
+                    <div class="step-title">Load Model</div>
+                    <div class="step-desc">Downloaded Qwen 2.5 7B (~14GB) from HuggingFace to Modal Volume. Persistent distributed storage shared across all steps. First load: 10 minutes. Subsequent runs: instant (cached). Cost: $1.16.</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">Step 02</div>
+                    <div class="step-title">RL Rollouts</div>
+                    <div class="step-desc">Ran 10 parallel inference calls to evaluate base model performance. 8/10 completed (2 timeouts). Demonstrates Modal's auto-scaling: spin up multiple GPUs in parallel, run evaluations, scale back to zero.</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">Step 03</div>
+                    <div class="step-title">Fine-tune</div>
+                    <div class="step-desc">LoRA fine-tuning on A100 GPU. 206 Q&A pairs, 10 epochs, 9.3 minutes. Trained only ~10M parameters (1% of 7B total). Final loss: 2.78. Model saved to Volume. Cost: $0.52.</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">Step 04</div>
+                    <div class="step-title">Serve</div>
+                    <div class="step-desc">Both models deployed on A10G GPUs with auto-scaling (zero when idle). Cold start: ~60s (loads 14GB into GPU). Warm inference: 10-30s per query. Web endpoint: dancleary54--vertical-ai-serve-inference-endpoint.modal.run</div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p>Built with Modal • TypeScript SDK • Qwen 2.5 7B Instruct</p>
+                <p style="margin-top: 12px;">
+                    <a href="https://github.com/Dan-Cleary/modal-qwen-7b-finetuning" target="_blank">View Repository →</a>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function toggleExamples() {
+            const examples = document.getElementById('trainingExamples');
+            const icon = document.getElementById('expandIcon');
+
+            examples.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+
+        function toggleModal() {
+            const features = document.getElementById('modalFeatures');
+            const icon = document.getElementById('expandModalIcon');
+
+            features.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+    </script>
+</body>
+</html>

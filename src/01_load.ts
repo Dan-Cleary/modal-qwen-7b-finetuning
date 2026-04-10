@@ -28,14 +28,10 @@ async function loadModel() {
   const modal = new ModalClient();
 
   try {
-    // Look up the Python Modal app we defined
-    console.log("📦 Looking up Modal app: vertical-ai-load-model");
-    const app = await modal.apps.fromName("vertical-ai-load-model");
-
     // Get a reference to the download_model function
     console.log("🔍 Finding download_model function...\n");
-    const downloadFn = await modal.functions.lookup(
-      app.appId,
+    const downloadFn = await modal.functions.fromName(
+      "vertical-ai-load-model",
       "download_model"
     );
 
@@ -45,7 +41,7 @@ async function loadModel() {
 
     // Invoke the function remotely
     // This runs on Modal's infrastructure with the GPU and dependencies we specified
-    const result = await downloadFn.callRemote();
+    const result = await downloadFn.remote([]);
 
     console.log("\n✅ Model loading complete!");
     console.log("📊 Result:", JSON.stringify(result, null, 2));
@@ -62,9 +58,12 @@ async function loadModel() {
 
     // Now let's test inference to make sure the model works
     console.log("\n🧪 Testing inference...");
-    const testFn = await modal.functions.lookup(app.appId, "test_inference");
-    const testResult = await testFn.callRemote(
-      "How do I reset my password?"
+    const testFn = await modal.functions.fromName(
+      "vertical-ai-load-model",
+      "test_inference"
+    );
+    const testResult = await testFn.remote(
+      ["How do I reset my password?"]
     );
 
     console.log("\n🤖 Test inference result:");

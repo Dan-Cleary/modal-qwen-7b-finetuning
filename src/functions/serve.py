@@ -31,10 +31,9 @@ image = (
 
 @app.function(
     image=image,
-    gpu="T4",  # T4 is perfect for inference (cheaper than A100, still fast)
+    gpu="A10G",  # A10G is faster than T4 for loading large models
     volumes={"/models": model_volume},
-    timeout=600,
-    keep_warm=1,  # Keep 1 instance warm for fast responses
+    timeout=1800,
 )
 def generate_base(prompt: str, max_tokens: int = 150) -> str:
     """
@@ -77,10 +76,9 @@ def generate_base(prompt: str, max_tokens: int = 150) -> str:
 
 @app.function(
     image=image,
-    gpu="T4",
+    gpu="A10G",
     volumes={"/models": model_volume},
-    timeout=600,
-    keep_warm=1,
+    timeout=1800,
 )
 def generate_finetuned(prompt: str, max_tokens: int = 150) -> str:
     """
@@ -124,9 +122,9 @@ def generate_finetuned(prompt: str, max_tokens: int = 150) -> str:
 
 @app.function(
     image=image,
-    gpu="T4",
+    gpu="A10G",
     volumes={"/models": model_volume},
-    timeout=600,
+    timeout=1800,
 )
 def compare_models(prompt: str, max_tokens: int = 150) -> dict:
     """
@@ -160,8 +158,9 @@ def compare_models(prompt: str, max_tokens: int = 150) -> dict:
 # Web endpoint for production serving
 @app.function(
     image=image,
-    gpu="T4",
+    gpu="A10G",
     volumes={"/models": model_volume},
+    timeout=1800,
 )
 @modal.web_endpoint(method="POST")
 def inference_endpoint(prompt: str, use_finetuned: bool = True, max_tokens: int = 150):
